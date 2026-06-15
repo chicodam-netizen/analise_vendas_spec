@@ -8,7 +8,9 @@ Sistema web para análise de dados de vendas, desenvolvido com Streamlit. Permit
 ### RF01 – Carregamento de arquivos
 - O sistema deve ler 4 arquivos CSV: `Produtos.csv`, `clientes.csv`, `Loja.csv`, `Vendas.csv`.
 - Deve detectar automaticamente o separador (`,`, `;`, `\t`) e o encoding (`utf-8`, `latin1`, `cp1252`).
-- Deve permitir que o usuário informe um caminho personalizado para os arquivos.
+- Deve suportar duas formas de entrada de arquivos:
+  - Diretório local contendo os arquivos (útil para desenvolvimento local).
+  - Upload de múltiplos arquivos pela interface web com pareamento inteligente de nomes (essencial para deploy em produção/nuvem).
 
 ### RF02 – Limpeza e tipagem de dados
 - Colunas numéricas devem ser convertidas para `float` (tratando vírgula, pontos e caracteres não numéricos).

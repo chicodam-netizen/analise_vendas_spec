@@ -224,9 +224,9 @@ def exibir_graficos(df_filtrado, df_completo_original, mes_inicio, mes_fim):
             paper_bgcolor='rgba(0,0,0,0)',
             xaxis=dict(showgrid=True, gridcolor='rgba(200,200,200,0.15)'),
             yaxis=dict(showgrid=False),
-            margin=dict(l=20, r=20, t=50, b=20),
+            margin=dict(l=20, r=20, t=50, b=100),
             height=400,
-            legend=dict(orientation="h", yanchor="bottom", y=-0.25, xanchor="center", x=0.5)
+            legend=dict(orientation="h", yanchor="top", y=-0.18, xanchor="center", x=0.5)
         )
         st.plotly_chart(fig_barras, use_container_width=True)
 

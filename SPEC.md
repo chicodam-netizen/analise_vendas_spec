@@ -36,7 +36,8 @@ Sistema web para análise de dados de vendas, desenvolvido com Streamlit. Permit
 
 ### RF06 – Interface gráfica (Streamlit)
 - Barra lateral contendo o logotipo corporativo `LOGO_FD.png` (ou título fallback em texto), campo para API Key da Groq, diretório dos dados, botão de carregamento e botão de limpeza de sessão.
-- Exibição de métricas principais (faturamento, vendas, ticket médio, etc.).
+- Filtro de período dinâmico (Mês/Ano Inicial e Final) na interface principal para refinar e re-calcular dados em cascata.
+- Painel de Gráficos (Plotly): Linha temporal de vendas, barras empilhadas horizontais dos Top 10 Produtos por Loja, e projeção preditiva para 12 meses.
 - Abas para visualização de dados completos, top produtos, top clientes, desempenho por loja e chat de análise.
 - Chat interativo que utiliza o LLM (Groq) para responder perguntas com base nos indicadores calculados.
 
@@ -63,9 +64,10 @@ Sistema web para análise de dados de vendas, desenvolvido com Streamlit. Permit
 | `data_validator.py`  | Validação de integridade referencial entre vendas e dimensões.                   |
 | `model_builder.py`   | Criação do modelo dimensional (joins, colunas calculadas).                       |
 | `analytics.py`       | Cálculo dos indicadores de vendas (métricas, agregações, séries temporais).      |
+| `forecaster.py`      | Análise preditiva e projeções de faturamento/vendas para 12 meses.               |
 | `llm_client.py`      | Construção do resumo para LLM e comunicação com a API da Groq.                   |
-| `ui.py`              | Componentes da interface Streamlit (sidebar, métricas, abas, chat).              |
-| `app.py`             | Ponto de entrada, coordena o fluxo de carregamento e aciona a UI.                |
+| `ui.py`              | Componentes da interface Streamlit (sidebar, métricas, abas, chat, gráficos).    |
+| `app.py`             | Ponto de entrada, coordena o fluxo de carregamento, filtros e aciona a UI.        |
 
 ## 5. Fluxo de Dados
 

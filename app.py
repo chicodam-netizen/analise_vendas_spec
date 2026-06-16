@@ -5,7 +5,7 @@ from data_cleaner import limpar_dataframe
 from data_validator import validar_relacionamentos
 from model_builder import construir_modelo_dimensional
 from analytics import gerar_indicadores
-from ui import exibir_sidebar, exibir_metricas, exibir_abas, exibir_chat
+from ui import exibir_sidebar, exibir_metricas, exibir_abas, exibir_chat, exibir_graficos
 
 def main():
     st.set_page_config(page_title="FD Consultoria - Análise de Vendas", page_icon="📊", layout="wide")
@@ -85,10 +85,52 @@ def main():
                       delta=f"{v['lojas']['invalidos']} inválidos" if v['lojas']['invalidos'] else "OK")
 
     if 'df_completo' in st.session_state and 'indicadores' in st.session_state:
-        exibir_metricas(st.session_state.indicadores)
-        exibir_abas(st.session_state.df_completo, st.session_state.indicadores)
+        df_completo = st.session_state.df_completo
+        
+        # Filtro de Período (Mês/Ano)
+        if 'mes_ano' in df_completo.columns:
+            meses_anos = sorted(df_completo['mes_ano'].dropna().unique().tolist())
+            if meses_anos:
+                st.markdown("### 🔍 Filtro de Período")
+                col_ini, col_fim = st.columns(2)
+                with col_ini:
+                    mes_inicio = st.selectbox("Mês/Ano Inicial", meses_anos, index=0)
+                with col_fim:
+                    mes_fim = st.selectbox("Mês/Ano Final", meses_anos, index=len(meses_anos) - 1)
+                
+                # Validar período
+                idx_ini = meses_anos.index(mes_inicio)
+                idx_fim = meses_anos.index(mes_fim)
+                
+                if idx_ini > idx_fim:
+                    st.error("❌ O Mês/Ano Inicial deve ser menor ou igual ao Mês/Ano Final.")
+                    df_filtrado = df_completo.copy()
+                    indicadores_filtrados = st.session_state.indicadores
+                    mes_inicio = meses_anos[0]
+                    mes_fim = meses_anos[-1]
+                else:
+                    df_filtrado = df_completo[(df_completo['mes_ano'] >= mes_inicio) & (df_completo['mes_ano'] <= mes_fim)].copy()
+                    indicadores_filtrados = gerar_indicadores(df_filtrado)
+            else:
+                df_filtrado = df_completo.copy()
+                indicadores_filtrados = st.session_state.indicadores
+                mes_inicio = None
+                mes_fim = None
+        else:
+            df_filtrado = df_completo.copy()
+            indicadores_filtrados = st.session_state.indicadores
+            mes_inicio = None
+            mes_fim = None
+
+        # Exibição do painel
+        exibir_metricas(indicadores_filtrados)
+        
+        if mes_inicio and mes_fim:
+            exibir_graficos(df_filtrado, df_completo, mes_inicio, mes_fim)
+            
+        exibir_abas(df_filtrado, indicadores_filtrados)
         st.divider()
-        exibir_chat(groq_key, st.session_state.indicadores)
+        exibir_chat(groq_key, indicadores_filtrados)
     else:
         st.info("👋 Clique em 'Carregar Arquivos' na barra lateral para iniciar a análise.")
         with st.expander("📋 Formato esperado dos arquivos"):

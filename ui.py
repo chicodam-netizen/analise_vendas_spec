@@ -1,5 +1,8 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from forecaster import prever_vendas_12_meses
 
 def formatar_numero_br(valor):
     """Formata número no padrão brasileiro R$ 1.234,56"""
@@ -130,3 +133,178 @@ def exibir_chat(groq_key, indicadores):
                     st.session_state.messages.append({"role": "assistant", "content": resposta})
                 except Exception as e:
                     st.error(f"Erro ao consultar LLM: {str(e)}")
+
+def exibir_graficos(df_filtrado, df_completo_original, mes_inicio, mes_fim):
+    """Exibe os 3 gráficos principais solicitados pelo usuário."""
+    st.markdown("### 📊 Painel de Gráficos e Previsões")
+    
+    if df_filtrado is None or df_filtrado.empty:
+        st.warning("Sem dados disponíveis no período selecionado.")
+        return
+
+    # Controles locais para o gráfico
+    col_sel, _ = st.columns([2, 2])
+    with col_sel:
+        metric_selector = st.radio(
+            "Visualizar métrica nos gráficos 1 e 3:",
+            ["Faturamento (R$)", "Quantidade de Unidades"],
+            horizontal=True,
+            key="metrica_graficos"
+        )
+    
+    col1, col2 = st.columns(2)
+    
+    # ------------------ GRÁFICO 1: EVOLUÇÃO DAS VENDAS ------------------
+    with col1:
+        coluna_grafico = 'Valor_Final' if metric_selector == "Faturamento (R$)" else 'quantidade'
+        rotulo_y = 'Faturamento (R$)' if metric_selector == "Faturamento (R$)" else 'Unidades Vendidas'
+        
+        # Agrupar por mes_ano
+        df_evolucao = df_filtrado.groupby('mes_ano')[coluna_grafico].sum().reset_index()
+        df_evolucao = df_evolucao.sort_values('mes_ano')
+        
+        fig_evolucao = px.line(
+            df_evolucao,
+            x='mes_ano',
+            y=coluna_grafico,
+            labels={'mes_ano': 'Mês/Ano', coluna_grafico: rotulo_y},
+            title=f'Evolução de Vendas no Período ({rotulo_y})',
+            markers=True
+        )
+        
+        # Cores elegantes (azul FD)
+        fig_evolucao.update_traces(line_color='#2A6F97', line_width=3, marker=dict(size=7))
+        fig_evolucao.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(showgrid=True, gridcolor='rgba(200,200,200,0.15)'),
+            yaxis=dict(showgrid=True, gridcolor='rgba(200,200,200,0.15)'),
+            margin=dict(l=20, r=20, t=50, b=20),
+            height=400
+        )
+        st.plotly_chart(fig_evolucao, use_container_width=True)
+
+    # ------------------ GRÁFICO 2: TOP 10 PRODUTOS POR LOJA ------------------
+    with col2:
+        # Criar nomes de exibição amigáveis
+        df_prod = df_filtrado.copy()
+        if 'marca' in df_prod.columns and 'tipo' in df_prod.columns:
+            df_prod['produto_nome'] = df_prod['marca'].astype(str) + " - " + df_prod['tipo'].astype(str)
+        else:
+            df_prod['produto_nome'] = df_prod['cod_produto'].astype(str)
+            
+        if 'descricao' in df_prod.columns:
+            df_prod['loja_nome'] = df_prod['descricao'].astype(str)
+        else:
+            df_prod['loja_nome'] = "Loja " + df_prod['cod_loja'].astype(str)
+            
+        # Encontrar top 10 produtos globais no período filtrado
+        top_10_prod = df_prod.groupby('produto_nome')['Valor_Final'].sum().nlargest(10).index.tolist()
+        
+        df_top_10 = df_prod[df_prod['produto_nome'].isin(top_10_prod)]
+        
+        # Agrupar por produto e loja
+        df_grouped = df_top_10.groupby(['produto_nome', 'loja_nome'])[coluna_grafico].sum().reset_index()
+        
+        # Criar gráfico de barras horizontais empilhadas
+        fig_barras = px.bar(
+            df_grouped,
+            x=coluna_grafico,
+            y='produto_nome',
+            color='loja_nome',
+            orientation='h',
+            title=f'Top 10 Produtos por Loja ({rotulo_y})',
+            labels={coluna_grafico: rotulo_y, 'produto_nome': 'Produto', 'loja_nome': 'Loja'},
+            category_orders={"produto_nome": top_10_prod[::-1]}, # Ordenado do maior para o menor
+            color_discrete_sequence=px.colors.qualitative.Prism
+        )
+        
+        fig_barras.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(showgrid=True, gridcolor='rgba(200,200,200,0.15)'),
+            yaxis=dict(showgrid=False),
+            margin=dict(l=20, r=20, t=50, b=20),
+            height=400,
+            legend=dict(orientation="h", yanchor="bottom", y=-0.25, xanchor="center", x=0.5)
+        )
+        st.plotly_chart(fig_barras, use_container_width=True)
+
+    # ------------------ GRÁFICO 3: PREVISÃO DE VENDAS ------------------
+    st.markdown("#### 🔮 Análise Preditiva de Vendas (Próximos 12 Meses)")
+    
+    # Agrupar dados históricos completos ATÉ o período final selecionado (mes_fim)
+    df_mensal_original = df_completo_original[df_completo_original['mes_ano'] <= mes_fim].groupby('mes_ano').agg(
+        faturamento=('Valor_Final', 'sum'),
+        quantidade=('quantidade', 'sum')
+    ).reset_index()
+    
+    coluna_pred = 'faturamento' if metric_selector == "Faturamento (R$)" else 'quantidade'
+    
+    df_proj, status, msg_pred = prever_vendas_12_meses(df_mensal_original, coluna_valor=coluna_pred)
+    
+    if df_proj is not None:
+        fig_pred = go.Figure()
+        
+        df_hist = df_proj[df_proj['tipo'] == 'Histórico']
+        df_future = df_proj[df_proj['tipo'] == 'Previsão']
+        
+        # Histórico Real
+        fig_pred.add_trace(go.Scatter(
+            x=df_hist['mes_ano'],
+            y=df_hist['real'],
+            mode='lines+markers',
+            name='Histórico Real',
+            line=dict(color='#2A6F97', width=3),
+            marker=dict(size=6)
+        ))
+        
+        # Previsão Conectada
+        if not df_hist.empty and not df_future.empty:
+            df_future_conn = pd.concat([df_hist.tail(1), df_future])
+        else:
+            df_future_conn = df_future
+            
+        fig_pred.add_trace(go.Scatter(
+            x=df_future_conn['mes_ano'],
+            y=df_future_conn['previsto'],
+            mode='lines+markers',
+            name='Previsão Futura',
+            line=dict(color='#E65F2B', width=3, dash='dash'),
+            marker=dict(size=6)
+        ))
+        
+        # Intervalo de Confiança Sombreado
+        if not df_future.empty:
+            fig_pred.add_trace(go.Scatter(
+                x=pd.concat([df_future['mes_ano'], df_future['mes_ano'].iloc[::-1]]),
+                y=pd.concat([df_future['limite_superior'], df_future['limite_inferior'].iloc[::-1]]),
+                fill='toself',
+                fillcolor='rgba(230, 95, 43, 0.12)',
+                line=dict(color='rgba(255,255,255,0)'),
+                hoverinfo="skip",
+                name='Intervalo de Confiança (95%)'
+            ))
+            
+        fig_pred.update_layout(
+            title=f'Previsão de Vendas ({rotulo_y})',
+            xaxis_title='Mês/Ano',
+            yaxis_title=rotulo_y,
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(showgrid=True, gridcolor='rgba(200,200,200,0.15)'),
+            yaxis=dict(showgrid=True, gridcolor='rgba(200,200,200,0.15)'),
+            margin=dict(l=20, r=20, t=50, b=20),
+            height=400,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        
+        st.plotly_chart(fig_pred, use_container_width=True)
+        
+        # Exibe status/mensagem do forecaster
+        if status == "sucesso":
+            st.info(f"💡 **Modelo de Previsão**: {msg_pred}")
+        else:
+            st.warning(f"⚠️ {msg_pred}")
+    else:
+        st.warning(f"Não foi possível gerar a previsão de vendas: {msg_pred}")

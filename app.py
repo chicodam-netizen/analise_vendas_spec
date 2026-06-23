@@ -36,30 +36,30 @@ def main():
             arquivos, msg = carregar_arquivos_upload(mapeamento_arquivos)
 
         if arquivos:
-                # Limpeza de cada DataFrame
-                for tipo in arquivos:
-                    df_limpo, tipos = limpar_dataframe(arquivos[tipo]['df_original'])
-                    arquivos[tipo]['df'] = df_limpo
-                    arquivos[tipo]['tipos'] = tipos
-                st.session_state.arquivos = arquivos
-                st.session_state.mensagem = msg
+            # Limpeza de cada DataFrame
+            for tipo in arquivos:
+                df_limpo, tipos = limpar_dataframe(arquivos[tipo]['df_original'])
+                arquivos[tipo]['df'] = df_limpo
+                arquivos[tipo]['tipos'] = tipos
+            st.session_state.arquivos = arquivos
+            st.session_state.mensagem = msg
 
-                # Validação
-                validacoes, todos_validos = validar_relacionamentos(arquivos)
-                st.session_state.validacoes = validacoes
-                if todos_validos:
-                    df_completo, erro = construir_modelo_dimensional(arquivos)
-                    if df_completo is not None:
-                        st.session_state.df_completo = df_completo
-                        indicadores = gerar_indicadores(df_completo)
-                        st.session_state.indicadores = indicadores
-                        st.success("✅ Dados carregados e validados com sucesso!")
-                    else:
-                        st.error(f"❌ Erro no modelo dimensional: {erro}")
+            # Validação
+            validacoes, todos_validos = validar_relacionamentos(arquivos)
+            st.session_state.validacoes = validacoes
+            if todos_validos:
+                df_completo, erro = construir_modelo_dimensional(arquivos)
+                if df_completo is not None:
+                    st.session_state.df_completo = df_completo
+                    indicadores = gerar_indicadores(df_completo)
+                    st.session_state.indicadores = indicadores
+                    st.success("✅ Dados carregados e validados com sucesso!")
                 else:
-                    st.warning("⚠️ Atenção: existem registros inválidos nos relacionamentos")
+                    st.error(f"❌ Erro no modelo dimensional: {erro}")
             else:
-                st.error(f"❌ {msg}")
+                st.warning("⚠️ Atenção: existem registros inválidos nos relacionamentos")
+        else:
+            st.error(f"❌ {msg}")
 
     # Exibe logs e conteúdo se houver dados
     if 'mensagem' in st.session_state:

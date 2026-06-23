@@ -42,6 +42,7 @@ Sistema web para análise de dados de vendas, desenvolvido com Streamlit. Permit
 ### RF07 – Integração com LLM (Groq)
 - Gerar um resumo estruturado dos dados (indicadores + pergunta do usuário).
 - Enviar para o modelo `llama-3.3-70b-versatile` com temperature 0.2.
+- Se a pergunta do usuário estiver fora do contexto dos dados de vendas (como receitas, curiosidades gerais, programação), não apresentar insights e apenas informar que a pergunta está fora do contexto dos dados.
 - Exibir a resposta no chat.
 
 ## 3. Requisitos Não Funcionais

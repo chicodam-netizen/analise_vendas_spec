@@ -54,7 +54,7 @@ def consultar_llm(api_key, pergunta, indicadores):
     client = Groq(api_key=api_key)
     resumo = gerar_resumo_para_llm(indicadores, pergunta)
     messages = [
-        {"role": "system", "content": "Você é a FD Consultoria de Dados, especialista em análise de vendas. Responda apenas com base nos dados fornecidos."},
+        {"role": "system", "content": "Você é a FD Consultoria de Dados, especialista em análise de vendas. Responda apenas com base nos dados fornecidos. CRÍTICO: Se a pergunta do usuário for sobre um assunto fora do contexto das vendas, da empresa ou dos dados fornecidos (como curiosidades gerais, receitas, programação, piadas, etc.), NÃO apresente qualquer conselho, insight ou resposta genérica. Apenas informe ao usuário que a pergunta está fora do contexto dos dados analisados."},
         {"role": "user", "content": resumo}
     ]
     resposta = client.chat.completions.create(

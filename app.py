@@ -1,6 +1,5 @@
 import streamlit as st
-from config import PATH_PADRAO
-from data_loader import carregar_todos_arquivos
+from data_loader import carregar_arquivos_upload
 from data_cleaner import limpar_dataframe
 from data_validator import validar_relacionamentos
 from model_builder import construir_modelo_dimensional
@@ -16,31 +15,27 @@ def main():
         st.session_state.messages = []
 
     # Sidebar
-    groq_key, input_method, path_dados, uploaded_files, carregar = exibir_sidebar()
+    groq_key, uploaded_files, carregar = exibir_sidebar()
 
     if carregar:
         with st.spinner("Carregando arquivos..."):
-            if input_method == "📁 Diretório Local":
-                arquivos, msg = carregar_todos_arquivos(path_dados)
-            else:
-                # Mapeia os arquivos enviados por upload
-                mapeamento_arquivos = {}
-                if uploaded_files:
-                    for f in uploaded_files:
-                        name_lower = f.name.lower()
-                        if "produto" in name_lower:
-                            mapeamento_arquivos['produtos'] = f
-                        elif "cliente" in name_lower:
-                            mapeamento_arquivos['clientes'] = f
-                        elif "loja" in name_lower:
-                            mapeamento_arquivos['lojas'] = f
-                        elif "venda" in name_lower:
-                            mapeamento_arquivos['vendas'] = f
-                
-                from data_loader import carregar_arquivos_upload
-                arquivos, msg = carregar_arquivos_upload(mapeamento_arquivos)
+            # Mapeia os arquivos enviados por upload
+            mapeamento_arquivos = {}
+            if uploaded_files:
+                for f in uploaded_files:
+                    name_lower = f.name.lower()
+                    if "produto" in name_lower:
+                        mapeamento_arquivos['produtos'] = f
+                    elif "cliente" in name_lower:
+                        mapeamento_arquivos['clientes'] = f
+                    elif "loja" in name_lower:
+                        mapeamento_arquivos['lojas'] = f
+                    elif "venda" in name_lower:
+                        mapeamento_arquivos['vendas'] = f
+            
+            arquivos, msg = carregar_arquivos_upload(mapeamento_arquivos)
 
-            if arquivos:
+        if arquivos:
                 # Limpeza de cada DataFrame
                 for tipo in arquivos:
                     df_limpo, tipos = limpar_dataframe(arquivos[tipo]['df_original'])

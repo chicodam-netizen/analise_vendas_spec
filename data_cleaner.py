@@ -64,11 +64,15 @@ def identificar_tipos_colunas(df):
             colunas_numericas.append(coluna)
         elif df[coluna].dtype == 'datetime64[ns]':
             colunas_datas.append(coluna)
-        elif df[coluna].dtype == 'object':
-            amostra = df[coluna].dropna().head(100)
+        elif df[coluna].dtype in ['object', 'str', 'string'] or pd.api.types.is_string_dtype(df[coluna]):
+            # Ignora valores vazios na amostra de detecção
+            amostra = df[coluna].dropna().astype(str).str.strip()
+            amostra = amostra[~amostra.isin(['', 'nan', 'None', 'null'])]
+            amostra = amostra.head(100)
             if not amostra.empty:
-                # Testa se é numérico
-                conv = amostra.apply(limpar_valor_numerico)
+                # Testa se é numérico usando regex para evitar falsos positivos (ex: "Produto 0")
+                pattern = r'^\s*(?:R\$\s*|\$\s*)?[-+]?\s*\d+[\d.,]*\s*$'
+                conv = amostra.apply(lambda v: limpar_valor_numerico(v) if re.match(pattern, str(v)) else None)
                 if conv.notna().sum() > len(amostra) * 0.8:
                     colunas_numericas.append(coluna)
                 else:
@@ -81,6 +85,8 @@ def identificar_tipos_colunas(df):
                             colunas_categoria.append(coluna)
                         else:
                             colunas_texto.append(coluna)
+            else:
+                colunas_texto.append(coluna)
         else:
             colunas_texto.append(coluna)
 

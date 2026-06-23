@@ -8,9 +8,7 @@ Sistema web para análise de dados de vendas, desenvolvido com Streamlit. Permit
 ### RF01 – Carregamento de arquivos
 - O sistema deve ler 4 arquivos CSV: `Produtos.csv`, `clientes.csv`, `Loja.csv`, `Vendas.csv`.
 - Deve detectar automaticamente o separador (`,`, `;`, `\t`) e o encoding (`utf-8`, `latin1`, `cp1252`).
-- Deve suportar duas formas de entrada de arquivos:
-  - Diretório local contendo os arquivos (útil para desenvolvimento local).
-  - Upload de múltiplos arquivos pela interface web com pareamento inteligente de nomes (essencial para deploy em produção/nuvem).
+- Deve suportar o carregamento de múltiplos arquivos via Upload direto pela interface web com pareamento inteligente de nomes (essencial para deploy em produção/nuvem).
 
 ### RF02 – Limpeza e tipagem de dados
 - Colunas numéricas devem ser convertidas para `float` (tratando vírgula, pontos e caracteres não numéricos).
@@ -35,7 +33,7 @@ Sistema web para análise de dados de vendas, desenvolvido com Streamlit. Permit
 - **Séries temporais**: evolução diária e mensal do faturamento e volume de vendas.
 
 ### RF06 – Interface gráfica (Streamlit)
-- Barra lateral contendo o logotipo corporativo `LOGO_FD.png` (ou título fallback em texto), campo para API Key da Groq, diretório dos dados, botão de carregamento e botão de limpeza de sessão.
+- Barra lateral contendo o logotipo corporativo `LOGO_FD.png` (ou título fallback em texto), campo para API Key da Groq, seletor de upload múltiplo de arquivos, botão de carregamento e botão de limpeza de sessão.
 - Filtro de período dinâmico (Mês/Ano Inicial e Final) na interface principal para refinar e re-calcular dados em cascata.
 - Painel de Gráficos (Plotly): Linha temporal de vendas, barras empilhadas horizontais dos Top 10 Produtos por Loja, e projeção preditiva para 12 meses.
 - Abas para visualização de dados completos, top produtos, top clientes, desempenho por loja e chat de análise.

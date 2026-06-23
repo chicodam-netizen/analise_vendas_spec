@@ -31,21 +31,12 @@ def exibir_sidebar():
         st.divider()
         st.subheader("📁 Configuração")
         
-        # Seleção de modo de dados
-        input_method = st.radio("Origem dos dados", ["📁 Diretório Local", "☁️ Upload de Arquivos"])
-        
-        path = None
-        uploaded_files = None
-        
-        if input_method == "📁 Diretório Local":
-            path = st.text_input("Diretório dos arquivos", value=r"D:\AMOSTRAS_TESTES\ENGENHARIA_IA")
-        else:
-            uploaded_files = st.file_uploader(
-                "Upload dos arquivos CSV", 
-                type=["csv"], 
-                accept_multiple_files=True, 
-                help="Selecione Produtos.csv, clientes.csv, Loja.csv, Vendas.csv"
-            )
+        uploaded_files = st.file_uploader(
+            "Upload dos arquivos CSV", 
+            type=["csv"], 
+            accept_multiple_files=True, 
+            help="Selecione Produtos.csv, clientes.csv, Loja.csv, Vendas.csv"
+        )
             
         carregar = st.button("🔄 Carregar Arquivos", type="primary")
         st.divider()
@@ -55,7 +46,7 @@ def exibir_sidebar():
                     del st.session_state[key]
             st.rerun()
         st.caption("Versão Spec-Driven - FD Consultoria")
-    return groq_key, input_method, path, uploaded_files, carregar
+    return groq_key, uploaded_files, carregar
 
 def exibir_metricas(indicadores):
     """Exibe os cards de métricas principais."""
